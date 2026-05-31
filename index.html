@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>うちのこ図鑑</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #F08060; --orange-light: #FEF0E8; --orange-pale: #FFF8F4;
+  --green: #5A9080; --green-light: #EAF4F0;
+  --cream: #FFFCF8; --white: #FFFFFF;
+  --charcoal: #2C2A28; --mid: #7A7268; --border: #F0EAE2;
+  --amber: #C8873A; --amber-light: #FDF3E7;
+  --lavender: #7B6FA0; --lavender-light: #F0EEF8;
+  --sand: #F5F0EA;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+body { background: #EDE8E0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: 'Noto Sans JP', sans-serif; padding: 24px 16px 48px; gap: 12px; }
+.page-label { font-size: 10px; color: #B0A898; letter-spacing: .15em; text-transform: uppercase; }
+.phone { width: 360px; background: var(--cream); border-radius: 40px; overflow: hidden; box-shadow: 0 0 0 6px #E0D8CE, 0 24px 64px rgba(80,60,40,.2); }
+.status-bar { background: var(--cream); padding: 14px 24px 8px; display: flex; justify-content: space-between; }
+.status-time { font-size: 12px; font-weight: 500; color: var(--charcoal); }
+.status-icons { font-size: 11px; color: var(--mid); }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* HEADER */
+.hdr { background: linear-gradient(135deg, #F08060, #F5A07A); padding: 16px 22px 18px; }
+.hdr-label { font-size: 10px; color: rgba(255,255,255,.8); letter-spacing: .1em; margin-bottom: 4px; }
+.hdr-title { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.4; }
+.hdr-sub { font-size: 12px; color: rgba(255,255,255,.8); margin-top: 2px; }
+
+/* FIELDS */
+.field { margin-bottom: 14px; }
+.field-label { font-size: 11px; font-weight: 500; color: var(--mid); letter-spacing: .08em; margin-bottom: 6px; }
+.field-input { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: var(--charcoal); outline: none; transition: border-color .15s; }
+.field-input:focus { border-color: #F5A07A; }
+.field-input::placeholder { color: #C0B8B0; }
+.chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: var(--mid); cursor: pointer; transition: all .15s; user-select: none; }
+.chip.sel-o { background: var(--orange-light); border-color: #F5A07A; color: var(--orange); font-weight: 500; }
+.chip.sel-g { background: var(--green-light); border-color: #9FC8B8; color: var(--green); font-weight: 500; }
+.chip.sel-r { background: #FEECEC; border-color: #F5B8B8; color: #C05050; font-weight: 500; }
+.btn-primary { display: flex; align-items: center; justify-content: center; width: 100%; height: 50px; background: var(--orange); border: none; border-radius: 14px; font-family: 'Noto Sans JP', sans-serif; font-size: 15px; font-weight: 500; color: #fff; cursor: pointer; box-shadow: 0 4px 16px rgba(240,128,96,.35); transition: transform .15s; }
+.btn-primary:hover { transform: translateY(-1px); }
+.error-msg { font-size: 12px; color: #E05050; margin-top: 6px; display: none; }
+
+/* NAV */
+.nav { background: var(--white); border-top: 1px solid var(--border); display: flex; padding: 8px 0 14px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+.nav-icon { font-size: 19px; }
+.nav-label { font-size: 9px; color: var(--mid); letter-spacing: .05em; }
+.nav-item.active .nav-label { color: var(--orange); font-weight: 500; }
+
+/* DISCOVERY */
+.disc-card { background: var(--green-light); border: 1px solid #9FC8B8; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; display: none; }
+.disc-card.show { display: block; }
+.disc-header { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.disc-avatar { width: 24px; height: 24px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.disc-label { font-size: 10px; font-weight: 500; color: var(--green); }
+.disc-time { font-size: 10px; color: var(--mid); margin-left: auto; }
+
+/* TALK */
+.talk-label { font-size: 14px; font-weight: 500; color: var(--charcoal); line-height: 1.65; margin-bottom: 12px; }
+.talk-wrap { position: relative; margin-bottom: 10px; }
+.talk-input { width: 100%; background: var(--white); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 14px 44px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: var(--charcoal); outline: none; transition: border-color .15s; resize: none; line-height: 1.7; min-height: 110px; }
+.talk-input:focus { border-color: #F5A07A; }
+.talk-input::placeholder { color: #C0B8B0; font-size: 13px; }
+.talk-send { position: absolute; bottom: 9px; right: 9px; background: var(--orange); border: none; border-radius: 10px; padding: 8px 16px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 500; color: #fff; }
+.stamp-div { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; }
+.stamp-div-line { flex: 1; height: 1px; background: var(--border); }
+.stamp-div-text { font-size: 10px; color: var(--mid); white-space: nowrap; }
+.stamp-btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; font-size: 11px; color: var(--charcoal); transition: all .15s; margin: 0 4px 4px 0; }
+.stamp-btn:hover { border-color: #F5A07A; }
+.talk-hint { font-size: 10px; color: var(--mid); text-align: center; }
+
+/* CHAT */
+.chat-hdr { background: var(--white); padding: 11px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+.chat-avatar { width: 32px; height: 32px; background: var(--green-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; border: 1px solid #9FC8B8; }
+.chat-hdr-name { font-size: 13px; font-weight: 500; color: var(--charcoal); }
+.chat-hdr-sub { font-size: 10px; color: var(--mid); }
+.chat-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 9px; min-height: 320px; max-height: 370px; overflow-y: auto; }
+.bub-user { background: var(--orange); color: white; border-radius: 16px 16px 4px 16px; padding: 10px 13px; font-size: 13px; line-height: 1.7; align-self: flex-end; max-width: 85%; }
+.bub-ai { background: var(--white); border: 1px solid var(--border); border-radius: 16px 16px 16px 4px; padding: 11px 13px; font-size: 13px; line-height: 1.85; color: var(--charcoal); max-width: 92%; }
+.bub-loading { background: var(--white); border: 1px solid var(--border); border-radius: 16px 16px 16px 4px; padding: 12px 16px; display: flex; gap: 5px; align-items: center; }
+.ldot { width: 7px; height: 7px; border-radius: 50%; background: var(--mid); animation: bounce 1.2s ease-in-out infinite; }
+.ldot:nth-child(2) { animation-delay: .2s; }
+.ldot:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-6px); opacity: 1; } }
+.chat-input-area { padding: 9px 14px 11px; border-top: 1px solid var(--border); display: flex; gap: 7px; align-items: center; background: var(--white); }
+.chat-input { flex: 1; background: var(--cream); border: 1px solid var(--border); border-radius: 20px; padding: 9px 14px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--charcoal); outline: none; }
+.chat-input::placeholder { color: #C0B8B0; }
+.chat-send-btn { width: 36px; height: 36px; background: var(--orange); border: none; border-radius: 50%; cursor: pointer; font-size: 15px; color: white; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+
+/* TORISETU */
+.ts-hdr { background: linear-gradient(135deg, #F08060, #F5A07A); padding: 14px 18px 16px; }
+.ts-hdr-top { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.back-btn { width: 28px; height: 28px; background: rgba(255,255,255,.25); border: none; border-radius: 50%; cursor: pointer; font-size: 13px; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.lv-strip { display: flex; align-items: center; gap: 8px; }
+.lv-badge { background: #fff; color: var(--orange); font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+.lv-bar-bg { flex: 1; background: rgba(255,255,255,.3); border-radius: 4px; height: 5px; }
+.lv-bar-fill { background: #fff; height: 5px; border-radius: 4px; transition: width .8s cubic-bezier(.34,1.56,.64,1); }
+.lv-count { font-size: 10px; color: rgba(255,255,255,.85); white-space: nowrap; }
+
+/* TABS */
+.tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); }
+.tab { flex: 1; padding: 10px 2px; font-size: 11px; font-weight: 500; color: var(--mid); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; font-family: 'Noto Sans JP', sans-serif; }
+.tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+.ts-body { overflow-y: auto; max-height: 520px; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 13px 15px; }
+.sec-label { font-size: 10px; font-weight: 500; color: var(--mid); letter-spacing: .1em; }
+
+/* CARD TITLE ROW */
+.card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.card-title { font-size: 11px; font-weight: 500; color: var(--charcoal); }
+.card-meta { font-size: 10px; color: var(--mid); }
+
+/* ZUKAN */
+.zukan-row { display: flex; align-items: center; gap: 10px; background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 11px 13px; cursor: pointer; transition: all .15s; position: relative; }
+.zukan-row:hover { transform: translateX(3px); box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.zukan-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+.zukan-tag { font-size: 10px; font-weight: 500; letter-spacing: .04em; margin-bottom: 2px; }
+.zukan-title { font-size: 13px; font-weight: 500; color: var(--charcoal); line-height: 1.4; }
+.zukan-arrow { font-size: 18px; color: #D0C8C0; flex-shrink: 0; margin-left: auto; }
+.new-badge { position: absolute; top: -5px; right: -5px; background: var(--orange); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+
+/* PARAM BARS */
+.param-item { margin-bottom: 10px; }
+.param-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.param-name { font-size: 12px; font-weight: 500; color: var(--charcoal); }
+.param-val { font-size: 11px; color: var(--mid); }
+.param-bg { background: var(--border); border-radius: 4px; height: 7px; }
+.param-fill { height: 7px; border-radius: 4px; transition: width 1s cubic-bezier(.34,1.56,.64,1); }
+
+/* TIMELINE */
+.tl-item { display: flex; gap: 10px; margin-bottom: 12px; }
+.tl-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; }
+.tl-line { width: 1px; background: var(--border); flex: 1; min-height: 16px; }
+.tl-date { font-size: 10px; color: var(--mid); margin-bottom: 3px; }
+.tl-text { font-size: 13px; color: var(--charcoal); line-height: 1.7; margin-bottom: 5px; }
+.tl-ai { font-size: 11px; color: var(--green); line-height: 1.6; padding: 6px 9px; background: var(--green-light); border-radius: 8px; }
+
+/* POPUP */
+.popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.popup-overlay.show { opacity: 1; pointer-events: all; }
+.popup-sheet { background: var(--cream); border-radius: 24px 24px 0 0; padding: 18px 20px 32px; width: 100%; max-width: 420px; transform: translateY(100%); transition: transform .3s cubic-bezier(.32,0,.67,0); max-height: 80vh; overflow-y: auto; }
+.popup-overlay.show .popup-sheet { transform: translateY(0); }
+.popup-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.popup-close { width: 100%; height: 44px; background: var(--orange-light); border: none; border-radius: 12px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 500; color: var(--orange); cursor: pointer; margin-top: 14px; }
+
+/* HEATMAP */
+#heatmap { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; width: 100%; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp .4s ease both; }
+</style>
+</head>
+<body>
+<p class="page-label">うちのこ図鑑</p>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popup" onclick="closePopup(event)">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div id="popup-content"></div>
+    <button class="popup-close" onclick="document.getElementById('popup').classList.remove('show')">とじる</button>
+  </div>
+</div>
+
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time" id="clock">21:30</span>
+    <span class="status-icons">●●●</span>
+  </div>
+
+  <!-- SCREEN 1: 編集 -->
+  <div class="screen active" id="screen-profile">
+    <div class="hdr">
+      <p class="hdr-label">うちのこ図鑑</p>
+      <h2 class="hdr-title">この子らしさを、<br>教えてください</h2>
+      <p class="hdr-sub">入力するほど、AIがこの子を知っていきます</p>
+    </div>
+    <div style="padding:16px 20px 20px;">
+      <div class="field"><p class="field-label">お子さんの名前</p><input class="field-input" type="text" id="child-name" placeholder="はな"></div>
+      <div class="field"><p class="field-label">年齢</p><input class="field-input" type="text" id="child-age" placeholder="2歳3ヶ月"></div>
+      <div class="field">
+        <p class="field-label">性格・タイプ</p>
+        <div class="chips-wrap" id="chips-p">
+          <div class="chip" onclick="toggleChip(this,'sel-o')">感情豊か</div><div class="chip" onclick="toggleChip(this,'sel-o')">慎重派</div><div class="chip" onclick="toggleChip(this,'sel-o')">活発</div><div class="chip" onclick="toggleChip(this,'sel-o')">マイペース</div><div class="chip" onclick="toggleChip(this,'sel-o')">人見知り</div><div class="chip" onclick="toggleChip(this,'sel-o')">こだわり強め</div><div class="chip" onclick="toggleChip(this,'sel-o')">好奇心旺盛</div><div class="chip" onclick="toggleChip(this,'sel-o')">甘えん坊</div><div class="chip" onclick="toggleChip(this,'sel-o')">頑固</div><div class="chip" onclick="toggleChip(this,'sel-o')">穏やか</div>
+        </div>
+      </div>
+      <div class="field">
+        <p class="field-label">好きなこと・得意なこと</p>
+        <div class="chips-wrap" id="chips-l">
+          <div class="chip" onclick="toggleChip(this,'sel-g')">お絵かき</div><div class="chip" onclick="toggleChip(this,'sel-g')">積み木・ブロック</div><div class="chip" onclick="toggleChip(this,'sel-g')">外遊び</div><div class="chip" onclick="toggleChip(this,'sel-g')">絵本</div><div class="chip" onclick="toggleChip(this,'sel-g')">音楽・歌</div><div class="chip" onclick="toggleChip(this,'sel-g')">ごっこ遊び</div><div class="chip" onclick="toggleChip(this,'sel-g')">水遊び</div><div class="chip" onclick="toggleChip(this,'sel-g')">パズル</div><div class="chip" onclick="toggleChip(this,'sel-g')">動物</div><div class="chip" onclick="toggleChip(this,'sel-g')">乗り物</div><div class="chip" onclick="toggleChip(this,'sel-g')">アルファベット・数字</div>
+        </div>
+      </div>
+      <div class="field">
+        <p class="field-label">苦手なこと・嫌がること</p>
+        <div class="chips-wrap" id="chips-d">
+          <div class="chip" onclick="toggleChip(this,'sel-r')">大きな音</div><div class="chip" onclick="toggleChip(this,'sel-r')">初めての場所</div><div class="chip" onclick="toggleChip(this,'sel-r')">待つこと</div><div class="chip" onclick="toggleChip(this,'sel-r')">着替え</div><div class="chip" onclick="toggleChip(this,'sel-r')">食べ物の好き嫌い</div><div class="chip" onclick="toggleChip(this,'sel-r')">切り替えが苦手</div><div class="chip" onclick="toggleChip(this,'sel-r')">人混み</div><div class="chip" onclick="toggleChip(this,'sel-r')">思い通りにならないと崩れる</div>
+        </div>
+      </div>
+      <div class="field"><p class="field-label">最近の様子（任意）</p><textarea class="field-input" id="recent" rows="3" style="resize:none;line-height:1.7" placeholder="例：言葉が増えてきた、イヤイヤがひどい..."></textarea></div>
+      <p class="error-msg" id="profile-error">名前と年齢を入力してください</p>
+      <button class="btn-primary" id="save-btn" onclick="saveProfile()">はじめる →</button>
+    </div>
+    <div class="nav">
+      <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label">ホーム</span></div>
+      <div class="nav-item" onclick="openTorisetu()"><span class="nav-icon">📖</span><span class="nav-label">トリセツ</span></div>
+      <div class="nav-item" onclick="goTo('screen-talk')"><span class="nav-icon">💬</span><span class="nav-label">トーク</span></div>
+      <div class="nav-item active"><span class="nav-icon">✏️</span><span class="nav-label">編集</span></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: ホーム -->
+  <div class="screen" id="screen-home">
+    <div class="hdr">
+      <p class="hdr-label">うちのこ図鑑</p>
+      <p id="home-name" style="font-size:22px;font-weight:700;color:#fff;margin-bottom:1px;">はなちゃん</p>
+      <p id="home-age" style="font-size:12px;color:rgba(255,255,255,.8);">2歳3ヶ月</p>
+    </div>
+    <div style="padding:16px 18px;">
+      <!-- ちょっといいですか -->
+      <div class="disc-card" id="discovery-card">
+        <div class="disc-header">
+          <div class="disc-avatar">🌿</div>
+          <span class="disc-label">ちょっといいですか？</span>
+          <span class="disc-time" id="discovery-time"></span>
+        </div>
+        <p style="font-size:13px;color:var(--charcoal);line-height:1.8;" id="discovery-text"></p>
+      </div>
+      <!-- 話しかける -->
+      <p class="talk-label" id="talk-label">今日、気になることはありますか？</p>
+      <div class="talk-wrap">
+        <textarea class="talk-input" id="free-input" placeholder="悩みでも、発見でも、なんでも&#10;例：アルファベットに興味があるみたい&#10;例：さっきから泣き止まなくて..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFree();}"></textarea>
+        <button class="talk-send" onclick="sendFree()">送る</button>
+      </div>
+      <!-- クイック相談 -->
+      <div class="stamp-div">
+        <div class="stamp-div-line"></div>
+        <span class="stamp-div-text">クイック相談</span>
+        <div class="stamp-div-line"></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <button class="stamp-btn" onclick="sendStamp('kanshaku')" style="border-color:#F5B8B8;">⚡ かんしゃく</button>
+        <button class="stamp-btn" onclick="sendStamp('guzuguzu')" style="border-color:#E8C898;">😢 ぐずぐず</button>
+        <button class="stamp-btn" onclick="sendStamp('hakken')" style="border-color:#9FC8B8;">✨ たのしい発見</button>
+        <button class="stamp-btn" onclick="sendStamp('soudan')" style="border-color:#F5A07A;">🤔 どう対応する？</button>
+      </div>
+      <p class="talk-hint" style="margin-top:6px;">1タップで相談できます</p>
+    </div>
+    <div class="nav">
+      <div class="nav-item active"><span class="nav-icon">🏠</span><span class="nav-label">ホーム</span></div>
+      <div class="nav-item" onclick="openTorisetu()"><span class="nav-icon">📖</span><span class="nav-label">トリセツ</span></div>
+      <div class="nav-item" onclick="goTo('screen-talk')"><span class="nav-icon">💬</span><span class="nav-label">トーク</span></div>
+      <div class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">✏️</span><span class="nav-label">編集</span></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: チャット -->
+  <div class="screen" id="screen-chat">
+    <div class="chat-hdr">
+      <button class="back-btn" onclick="goTo('screen-home')" style="background:var(--orange-light);color:var(--orange);">←</button>
+      <div class="chat-avatar">🌿</div>
+      <div><p class="chat-hdr-name">うちのこ図鑑</p><p class="chat-hdr-sub" id="chat-sub">この子のデータをもとに返答しています</p></div>
+    </div>
+    <div class="chat-body" id="chat-body"></div>
+    <div class="chat-input-area">
+      <input class="chat-input" type="text" id="chat-input" placeholder="続けて相談する..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chat-send-btn" onclick="sendChat()">→</button>
+    </div>
+    <div class="nav">
+      <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label">ホーム</span></div>
+      <div class="nav-item" onclick="openTorisetu()"><span class="nav-icon">📖</span><span class="nav-label">トリセツ</span></div>
+      <div class="nav-item active"><span class="nav-icon">💬</span><span class="nav-label">トーク</span></div>
+      <div class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">✏️</span><span class="nav-label">編集</span></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: トーク履歴 -->
+  <div class="screen" id="screen-talk">
+    <div class="hdr"><p class="hdr-label">うちのこ図鑑</p><p class="hdr-title">トーク履歴</p></div>
+    <div style="overflow-y:auto;max-height:580px;padding:14px 16px;" id="talk-history-body">
+      <div style="text-align:center;padding:28px 16px;font-size:13px;color:var(--mid);line-height:1.8;">
+        <p style="font-size:28px;margin-bottom:10px;">💬</p>
+        <p style="font-weight:500;color:var(--charcoal);margin-bottom:6px;">まだトークがありません</p>
+        <p style="font-size:12px;">ホームから話しかけると<br>ここに履歴が残ります</p>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label">ホーム</span></div>
+      <div class="nav-item" onclick="openTorisetu()"><span class="nav-icon">📖</span><span class="nav-label">トリセツ</span></div>
+      <div class="nav-item active"><span class="nav-icon">💬</span><span class="nav-label">トーク</span></div>
+      <div class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">✏️</span><span class="nav-label">編集</span></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: トリセツ -->
+  <div class="screen" id="screen-torisetu">
+    <div class="ts-hdr">
+      <div class="ts-hdr-top">
+        <button class="back-btn" onclick="goTo('screen-home')">←</button>
+        <div style="flex:1;">
+          <p style="font-size:10px;color:rgba(255,255,255,.8);letter-spacing:.08em;margin-bottom:2px;">うちのこ図鑑</p>
+          <p id="ts-title" style="font-size:16px;font-weight:700;color:#fff;">トリセツ</p>
+        </div>
+        <div style="text-align:right;">
+          <p id="ts-age" style="font-size:10px;color:rgba(255,255,255,.8);margin-bottom:1px;"></p>
+          <p id="ts-days" style="font-size:10px;color:rgba(255,255,255,.8);"></p>
+        </div>
+      </div>
+      <div class="lv-strip">
+        <span class="lv-badge" id="lv-badge">Lv.0</span>
+        <div class="lv-bar-bg"><div class="lv-bar-fill" id="lv-bar" style="width:0%"></div></div>
+        <span class="lv-count" id="lv-count">会話してみよう</span>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('today',this)">今日の発見</button>
+      <button class="tab" onclick="switchTab('params',this)">成長グラフ</button>
+      <button class="tab" onclick="switchTab('book',this)">図鑑</button>
+      <button class="tab" onclick="switchTab('timeline',this)">観察ノート</button>
+    </div>
+
+    <!-- TAB: 今日の発見 -->
+    <div class="ts-body" id="tab-today">
+      <!-- 小さな発見 -->
+      <div class="card fade-up">
+        <div class="card-title-row"><p class="card-title">小さな発見！</p><p class="card-meta" id="today-date"></p></div>
+        <div id="today-diff-content">
+          <p style="font-size:12px;color:var(--mid);text-align:center;padding:10px 0;">会話が積み重なると<br>きのう→きょうの変化が見えてきます</p>
+        </div>
+      </div>
+      <!-- AIの仮説 -->
+      <div class="card fade-up">
+        <div class="card-title-row"><p class="card-title">AIの仮説</p><p class="card-meta" id="hypo-num"></p></div>
+        <div id="hypo-content">
+          <p style="font-size:12px;color:var(--mid);text-align:center;padding:10px 0;">もう少し話しかけると<br>仮説が生まれてきます</p>
+        </div>
+      </div>
+      <!-- 挑戦中のこと -->
+      <div class="card fade-up">
+        <div class="card-title-row"><p class="card-title">挑戦中のこと</p><p class="card-meta" id="stage-name"></p></div>
+        <div id="stage-content">
+          <p style="font-size:12px;color:var(--mid);text-align:center;padding:10px 0;">観察を続けると<br>成長ステージが現れます</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: 成長グラフ -->
+    <div class="ts-body" id="tab-params" style="display:none;">
+      <div class="card fade-up">
+        <p style="font-size:11px;color:var(--mid);margin-bottom:12px;line-height:1.6;">観察を重ねるほど精度が上がります。↑は前回からの伸び。</p>
+        <div class="param-item"><div class="param-hdr"><span class="param-name">🔤 言語・表現</span><span class="param-val" id="pv-lang">--</span></div><div class="param-bg"><div class="param-fill" id="pb-lang" style="width:0%;background:linear-gradient(90deg,#5A9080,#8EC4B8);"></div></div></div>
+        <div class="param-item"><div class="param-hdr"><span class="param-name">🎵 音感・リズム</span><span class="param-val" id="pv-music">--</span></div><div class="param-bg"><div class="param-fill" id="pb-music" style="width:0%;background:linear-gradient(90deg,var(--lavender),#A89CCE);"></div></div></div>
+        <div class="param-item"><div class="param-hdr"><span class="param-name">🧩 パターン認識</span><span class="param-val" id="pv-pattern">--</span></div><div class="param-bg"><div class="param-fill" id="pb-pattern" style="width:0%;background:linear-gradient(90deg,var(--orange),#F5A07A);"></div></div></div>
+        <div class="param-item"><div class="param-hdr"><span class="param-name">💝 感情表現</span><span class="param-val" id="pv-emotion">--</span></div><div class="param-bg"><div class="param-fill" id="pb-emotion" style="width:0%;background:linear-gradient(90deg,#E07070,#F0A0A0);"></div></div></div>
+        <div class="param-item" style="margin-bottom:0;"><div class="param-hdr"><span class="param-name">🏃 運動・身体</span><span class="param-val" id="pv-motor">--</span></div><div class="param-bg"><div class="param-fill" id="pb-motor" style="width:0%;background:linear-gradient(90deg,var(--amber),#E0A060);"></div></div></div>
+      </div>
+      <!-- 理解度 -->
+      <div class="card fade-up" style="background:var(--orange-pale);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="font-size:32px;">📖</div>
+          <div style="flex:1;"><p style="font-size:12px;font-weight:500;color:var(--charcoal);margin-bottom:2px;" id="ts-title2">トリセツ</p><p style="font-size:10px;color:var(--mid);">AIの理解度</p></div>
+        </div>
+        <div id="hearts-display" style="margin-bottom:6px;font-size:15px;letter-spacing:2px;"></div>
+        <div style="background:#F0EAE2;border-radius:4px;height:5px;margin-bottom:5px;"><div id="lv-bar2" style="background:var(--orange);height:5px;border-radius:4px;width:0%;transition:width .8s;"></div></div>
+        <p style="font-size:11px;color:var(--orange);font-weight:500;" id="lv-label2">Level 0/10</p>
+        <p style="font-size:10px;color:var(--mid);margin-top:3px;" id="lv-count2">0回の会話から分析しています</p>
+      </div>
+      <!-- ヒートマップ -->
+      <div class="card fade-up">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><p style="font-size:11px;font-weight:500;color:var(--mid);">記録の密度</p><p style="font-size:12px;font-weight:700;color:var(--orange);" id="log-count-display">0回</p></div>
+        <div id="heatmap"></div>
+        <p style="font-size:10px;color:var(--mid);text-align:right;margin-top:5px;" id="streak-text"></p>
+      </div>
+    </div>
+
+    <!-- TAB: 図鑑 -->
+    <div class="ts-body" id="tab-book" style="display:none;">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--orange-pale);border-radius:10px;padding:8px 11px;">
+        <span style="font-size:13px;">👆</span>
+        <p style="font-size:11px;color:var(--orange);line-height:1.5;">タップすると詳しい説明が見られます</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;" id="zukan-list">
+        <p style="font-size:12px;color:var(--mid);text-align:center;padding:16px 0;">会話が増えると図鑑が育ってきます</p>
+      </div>
+    </div>
+
+    <!-- TAB: 観察ノート -->
+    <div class="ts-body" id="tab-timeline" style="display:none;">
+      <div id="timeline-body">
+        <p style="font-size:12px;color:var(--mid);text-align:center;padding:16px 0;">観察を記録すると<br>ここにタイムラインが残ります</p>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label">ホーム</span></div>
+      <div class="nav-item active"><span class="nav-icon">📖</span><span class="nav-label">トリセツ</span></div>
+      <div class="nav-item" onclick="goTo('screen-talk')"><span class="nav-icon">💬</span><span class="nav-label">トーク</span></div>
+      <div class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">✏️</span><span class="nav-label">編集</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API_KEY = ''; // Vercel経由で送信
+var profile = {};
+var chatHistory = [];
+var conversationLog = [];
+var torisetu = { structured: null };
+var cardData = {};
+var barsAnimated = false;
+
+// CLOCK
+function updateClock() {
+  var now = new Date();
+  document.getElementById('clock').textContent = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// DATE
+function getDateStr(d) {
+  var days = ['日','月','火','水','木','金','土'];
+  d = d || new Date();
+  return (d.getMonth()+1) + '/' + d.getDate() + '（' + days[d.getDay()] + '）';
+}
+function getFullDateStr(d) {
+  d = d || new Date();
+  return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+}
+
+// CHIP TOGGLE
+function toggleChip(el, cls) {
+  el.classList.contains(cls) ? el.classList.remove(cls) : el.classList.add(cls);
+}
+
+// NAVIGATION
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'screen-talk') renderTalkHistory();
+}
+
+// SAVE PROFILE
+function saveProfile() {
+  var name = document.getElementById('child-name').value.trim();
+  var age = document.getElementById('child-age').value.trim();
+  if (!name || !age) { document.getElementById('profile-error').style.display = 'block'; return; }
+  document.getElementById('profile-error').style.display = 'none';
+  profile = {
+    name: name, age: age,
+    personality: Array.from(document.querySelectorAll('#chips-p .sel-o')).map(function(c) { return c.textContent; }),
+    likes: Array.from(document.querySelectorAll('#chips-l .sel-g')).map(function(c) { return c.textContent; }),
+    dislikes: Array.from(document.querySelectorAll('#chips-d .sel-r')).map(function(c) { return c.textContent; }),
+    recent: document.getElementById('recent').value.trim()
+  };
+  localStorage.setItem('uchinoko_p', JSON.stringify(profile));
+  var btn = document.getElementById('save-btn');
+  if (btn) btn.textContent = '更新する';
+  renderHome();
+  goTo('screen-home');
+}
+
+// RENDER HOME
+function renderHome() {
+  document.getElementById('home-name').textContent = profile.name + 'ちゃん';
+  document.getElementById('home-age').textContent = profile.age;
+  document.getElementById('chat-sub').textContent = profile.name + 'ちゃんのデータをもとに返答しています';
+  document.getElementById('ts-title').textContent = profile.name + 'ちゃんのトリセツ';
+  document.getElementById('ts-title2').textContent = profile.name + 'ちゃんのトリセツ';
+  document.getElementById('ts-age').textContent = profile.age;
+  document.getElementById('talk-label').textContent = '今日、' + profile.name + 'ちゃんのことで気になることはありますか？';
+  var todayEl = document.getElementById('today-date');
+  if (todayEl) todayEl.textContent = getDateStr();
+}
+
+// SYSTEM PROMPT
+function buildSystemPrompt() {
+  var p = (profile.personality||[]).join(', ') || 'unset';
+  var l = (profile.likes||[]).join(', ') || 'unset';
+  var d = (profile.dislikes||[]).join(', ') || 'unset';
+  return 'You are a veteran nursery school teacher AI for the app "Uchinoko Zukan".\n'
+    + 'Child: ' + profile.name + ' (' + profile.age + ')\n'
+    + 'Personality: ' + p + '\nLikes: ' + l + '\nDislikes: ' + d + '\nRecent: ' + (profile.recent||'none') + '\n\n'
+    + 'Always respond in Japanese. Warm nursery teacher tone. "~かもしれませんね" style.\n'
+    + 'Give advice specific to THIS child based on their profile. Not general advice.\n'
+    + 'End with a gentle question to continue dialogue. 150-200 characters. No JSON.';
+}
+
+// STAMP
+function sendStamp(type) {
+  var name = profile.name || 'お子さん';
+  var msgs = {
+    kanshaku: name + 'ちゃんがかんしゃくを起こしています。どう対応したらいいですか？',
+    guzuguzu: name + 'ちゃんがぐずぐずしています。なぜかな、どうしたらいいですか？',
+    hakken: name + 'ちゃんについて嬉しい発見がありました。どんな意味があるか教えてください。',
+    soudan: name + 'ちゃんのことで困っていることを相談したいです。'
+  };
+  chatHistory = [];
+  document.getElementById('chat-body').innerHTML = '';
+  goTo('screen-chat');
+  sendMessage(msgs[type] || msgs.soudan);
+}
+
+function sendFree() {
+  var input = document.getElementById('free-input');
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  chatHistory = [];
+  document.getElementById('chat-body').innerHTML = '';
+  goTo('screen-chat');
+  sendMessage(msg);
+}
+
+function sendChat() {
+  var input = document.getElementById('chat-input');
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  sendMessage(msg);
+}
+
+function sendMessage(msg) {
+  addBubble('user', msg);
+  addLoading();
+  chatHistory.push({ role: 'user', content: msg });
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system: buildSystemPrompt(), messages: chatHistory, max_tokens: 600 })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    removeLoading();
+    var text = data.content && data.content[0] ? data.content[0].text : 'エラーが発生しました';
+    chatHistory.push({ role: 'assistant', content: text });
+    var bubble = addBubble('ai', '');
+    typeText(bubble, text);
+    updateLog(msg, text);
+  }).catch(function(err) { removeLoading(); addBubble('ai', 'エラー: ' + err.message); });
+}
+
+function addBubble(type, html) {
+  var body = document.getElementById('chat-body');
+  var div = document.createElement('div');
+  div.className = 'bub-' + type + ' fade-up';
+  div.innerHTML = html;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  return div;
+}
+function addLoading() {
+  var body = document.getElementById('chat-body');
+  var div = document.createElement('div');
+  div.className = 'bub-loading'; div.id = 'loading-bubble';
+  div.innerHTML = '<div class="ldot"></div><div class="ldot"></div><div class="ldot"></div>';
+  body.appendChild(div); body.scrollTop = body.scrollHeight;
+}
+function removeLoading() { var el = document.getElementById('loading-bubble'); if (el) el.remove(); }
+function typeText(el, text) {
+  var i = 0;
+  var timer = setInterval(function() {
+    el.textContent = text.slice(0, i); i++;
+    var body = document.getElementById('chat-body');
+    if (body) body.scrollTop = body.scrollHeight;
+    if (i > text.length) clearInterval(timer);
+  }, 18);
+}
+
+// LOG
+function updateLog(q, a) {
+  conversationLog.push({ q: q, a: a, ts: Date.now() });
+  if (conversationLog.length > 50) conversationLog = conversationLog.slice(-50);
+  localStorage.setItem('uchinoko_log', JSON.stringify(conversationLog));
+  if (conversationLog.length % 2 === 0 || conversationLog.length === 1) generateTorisetu();
+}
+
+// LEVEL
+function calcLevel() {
+  var c = conversationLog.length;
+  if (c >= 80) return 10; if (c >= 60) return 9; if (c >= 40) return 8;
+  if (c >= 30) return 7; if (c >= 20) return 6; if (c >= 15) return 5;
+  if (c >= 10) return 4; if (c >= 7) return 3; if (c >= 4) return 2;
+  if (c >= 1) return 1; return 0;
+}
+function levelLabel(lv) {
+  if (lv === 0) return 'まだこれから';
+  if (lv <= 2) return 'はじまったばかり';
+  if (lv <= 4) return '少しわかってきた';
+  if (lv <= 6) return 'だいぶわかってきた';
+  if (lv <= 8) return 'よく知っている';
+  return 'この子のことなら任せて';
+}
+function nextLevelCount() {
+  var thresholds = [1,4,7,10,15,20,30,40,60,80];
+  var lv = calcLevel();
+  if (lv >= 10) return null;
+  return thresholds[lv];
+}
+
+// UPDATE LEVEL UI
+function updateLevelUI() {
+  var lv = calcLevel();
+  var count = conversationLog.length;
+  var pct = lv >= 10 ? 100 : Math.round(count / (nextLevelCount() || 1) * 100);
+  pct = Math.min(100, pct);
+
+  var badge = document.getElementById('lv-badge');
+  var bar = document.getElementById('lv-bar');
+  var countEl = document.getElementById('lv-count');
+  if (badge) badge.textContent = 'Lv.' + lv;
+  if (bar) bar.style.width = pct + '%';
+  if (countEl) countEl.textContent = lv >= 10 ? '達人レベル！' : 'あと' + ((nextLevelCount()||0) - count) + '回';
+
+  var bar2 = document.getElementById('lv-bar2');
+  var label2 = document.getElementById('lv-label2');
+  var count2 = document.getElementById('lv-count2');
+  var hearts = document.getElementById('hearts-display');
+  var tsdays = document.getElementById('ts-days');
+  if (bar2) bar2.style.width = pct + '%';
+  if (label2) label2.textContent = 'Level ' + lv + '/10: ' + levelLabel(lv);
+  if (count2) count2.textContent = count + '回の会話から分析しています';
+  if (hearts) {
+    var h = '';
+    for (var i = 1; i <= 10; i++) h += '<span style="opacity:' + (i <= lv ? '1' : '0.15') + ';">❤️</span>';
+    hearts.innerHTML = h;
+  }
+  if (tsdays) tsdays.textContent = '記録 ' + count + '回';
+  var lcDisp = document.getElementById('log-count-display');
+  if (lcDisp) lcDisp.textContent = count + '回';
+}
+
+// GENERATE TORISETU
+function generateTorisetu() {
+  if (conversationLog.length === 0) return;
+  var logText = conversationLog.map(function(c, i) {
+    return 'Q' + (i+1) + ':' + c.q.slice(0,40) + ' A:' + c.a.slice(0,60);
+  }).join('\n');
+  var prompt = 'Conversation log with ' + profile.name + ' (' + profile.age + '):\n' + logText
+    + '\nProfile: personality=' + (profile.personality||[]).join(',')
+    + ' likes=' + (profile.likes||[]).join(',') + ' dislikes=' + (profile.dislikes||[]).join(',')
+    + '\n\nAnalyze and return ONLY this JSON (values in Japanese):\n'
+    + '{"type_name":"child type name","type_desc":"description 60chars",'
+    + '"strengths":["s1","s2","s3"],"cautions":["c1","c2"],'
+    + '"patterns":[{"situation":"when","response":"advice 40chars"},{"situation":"when","response":"advice 40chars"}],'
+    + '"growing":"what is developing now 50chars",'
+    + '"params":{"lang":75,"music":70,"pattern":65,"emotion":80,"motor":60},'
+    + '"hypothesis":"one interesting hypothesis about this child based on observations 80chars",'
+    + '"stage_name":"what this child is currently working on or developing 20chars"}';
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system: 'Veteran nursery teacher. Return ONLY valid JSON with Japanese values.', messages: [{ role: 'user', content: prompt }], max_tokens: 800 })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    var text = data.content && data.content[0] ? data.content[0].text : '';
+    var m = text.match(/\{[\s\S]*\}/);
+    if (!m) return;
+    torisetu.structured = JSON.parse(m[0]);
+    localStorage.setItem('uchinoko_ts', JSON.stringify(torisetu.structured));
+    updateLevelUI();
+    renderTorisetsuAll();
+    generateDiscovery();
+  }).catch(function(e) { console.error('torisetu error', e); });
+}
+
+// GENERATE DISCOVERY
+function generateDiscovery() {
+  if (conversationLog.length < 2) return;
+  var recent = conversationLog.slice(-4).map(function(c) { return c.q.slice(0,30); }).join(', ');
+  var prompt = 'Recent conversations: ' + recent + '\nChild: ' + profile.name + ' (' + profile.age + ')'
+    + '\n\nWrite ONE short message in Japanese (60-80 chars) that highlights a small change or observation the parents might have missed. '
+    + 'Warm nursery teacher tone, ending with ne or yo. Text only.';
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system: 'Warm nursery teacher. Return only the message in Japanese.', messages: [{ role: 'user', content: prompt }], max_tokens: 150 })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    var text = data.content && data.content[0] ? data.content[0].text.trim() : '';
+    if (!text) return;
+    var disc = { text: text, ts: Date.now() };
+    localStorage.setItem('uchinoko_disc', JSON.stringify(disc));
+    showDiscovery(disc);
+  }).catch(function(e) { console.error('discovery error', e); });
+}
+
+function showDiscovery(d) {
+  if (!d || !d.text) return;
+  var card = document.getElementById('discovery-card');
+  document.getElementById('discovery-text').textContent = d.text;
+  var diff = Date.now() - d.ts;
+  var t = 'たった今';
+  if (diff > 86400000) t = Math.floor(diff/86400000) + '日前';
+  else if (diff > 3600000) t = Math.floor(diff/3600000) + '時間前';
+  else if (diff > 60000) t = Math.floor(diff/60000) + '分前';
+  document.getElementById('discovery-time').textContent = t;
+  card.classList.add('show');
+}
+
+// RENDER ALL TORISETU
+function renderTorisetsuAll() {
+  var d = torisetu.structured;
+  if (!d) return;
+  var dateStr = getFullDateStr();
+  var shortDate = getDateStr();
+
+  // 今日の発見
+  document.getElementById('today-date').textContent = shortDate;
+  document.getElementById('hypo-num').textContent = '#' + conversationLog.length;
+
+  if (d.hypothesis) {
+    var hypoEl = document.getElementById('hypo-content');
+    hypoEl.innerHTML = '<p style="font-size:13px;color:var(--charcoal);line-height:1.8;margin-bottom:10px;">' + d.hypothesis + '</p>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<button onclick="voteHypothesis(true)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid var(--green);background:var(--green-light);font-family:\'Noto Sans JP\',sans-serif;font-size:11px;font-weight:500;color:var(--green);cursor:pointer;">✓ そうかも</button>'
+      + '<button onclick="voteHypothesis(false)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);font-family:\'Noto Sans JP\',sans-serif;font-size:11px;color:var(--mid);cursor:pointer;">違うかな</button>'
+      + '</div>';
+  }
+
+  if (d.stage_name) {
+    document.getElementById('stage-name').textContent = d.stage_name;
+    var stageEl = document.getElementById('stage-content');
+    stageEl.innerHTML = '<div style="display:flex;align-items:center;margin-bottom:8px;">'
+      + stageNode('🌱', 'var(--green-light)', 'var(--green)', '気づき', true)
+      + stageLine('var(--green)')
+      + stageNode('🌸', 'var(--orange-light)', 'var(--orange)', '今ここ', true, true)
+      + stageLine('var(--border)')
+      + stageNode('⭐', 'var(--border)', 'var(--border)', 'できた', false)
+      + stageLine('var(--border)')
+      + stageNode('🏆', 'var(--border)', 'var(--border)', '習得', false, false, true)
+      + '</div>'
+      + '<p style="font-size:11px;color:var(--mid);line-height:1.6;">' + d.stage_name + 'に取り組んでいます。</p>';
+  }
+
+  // パラメータ
+  if (d.params) {
+    var params = ['lang','music','pattern','emotion','motor'];
+    params.forEach(function(k) {
+      var el = document.getElementById('pb-' + k);
+      var vEl = document.getElementById('pv-' + k);
+      var val = d.params[k] || 0;
+      if (el) el.style.width = val + '%';
+      if (vEl) vEl.textContent = val;
+    });
+  }
+
+  // 図鑑
+  cardData = {};
+  var zList = document.getElementById('zukan-list');
+  var items = [];
+
+  if (d.type_name) {
+    cardData['type'] = { emoji: '✨', tag: 'タイプ', color: '#F08060', bg: '#FEF0E8', title: d.type_name, desc: d.type_desc || '', date: dateStr, isNew: true };
+    items.push({ id: 'type', isNew: true });
+  }
+  if (d.strengths && d.strengths.length) {
+    cardData['strength'] = { emoji: '⭐', tag: '得意なこと', color: '#5A9080', bg: '#EAF4F0', title: d.strengths[0], desc: d.strengths.join(' / '), date: dateStr, isNew: false };
+    items.push({ id: 'strength', isNew: false });
+  }
+  if (d.cautions && d.cautions.length) {
+    cardData['caution'] = { emoji: '🔔', tag: '注意サイン', color: '#C05050', bg: '#FEECEC', title: d.cautions[0], desc: d.cautions.join(' / '), date: dateStr, isNew: false };
+    items.push({ id: 'caution', isNew: false });
+  }
+  if (d.growing) {
+    cardData['growing'] = { emoji: '🌱', tag: '今伸びていること', color: '#C8873A', bg: '#FDF3E7', title: d.growing, desc: d.growing, date: dateStr, isNew: true };
+    items.push({ id: 'growing', isNew: true });
+  }
+  if (d.patterns && d.patterns.length) {
+    cardData['patterns'] = { emoji: '💡', tag: 'こういうときはこうする', color: '#7B6FA0', bg: '#F0EEF8',
+      title: d.patterns.length + 'つのパターンを収録', desc: d.patterns.map(function(p) { return p.situation + ': ' + p.response; }).join('\n\n'), date: dateStr, isNew: false };
+    items.push({ id: 'patterns', isNew: false });
+  }
+
+  if (items.length) {
+    zList.innerHTML = '';
+    items.forEach(function(item) {
+      var c = cardData[item.id];
+      var row = document.createElement('div');
+      row.className = 'zukan-row fade-up';
+      row.setAttribute('onclick', 'openCard("' + item.id + '")');
+      row.innerHTML = (item.isNew ? '<span class="new-badge">NEW</span>' : '')
+        + '<div class="zukan-icon" style="background:' + c.bg + ';">' + c.emoji + '</div>'
+        + '<div style="flex:1;">'
+        + '<p class="zukan-tag" style="color:' + c.color + ';">' + c.tag + '</p>'
+        + '<p class="zukan-title">' + c.title + '</p>'
+        + '</div>'
+        + '<div style="text-align:right;margin-left:8px;">'
+        + '<p style="font-size:9px;color:var(--mid);">更新: ' + c.date + '</p>'
+        + '</div>'
+        + '<div class="zukan-arrow">›</div>';
+      zList.appendChild(row);
+    });
+  }
+
+  // タイムライン
+  renderTimeline();
+}
+
+function stageNode(emoji, bg, border, label, active, current, faded) {
+  var opacity = faded ? 'opacity:.2;' : (active ? '' : 'opacity:.35;');
+  var size = current ? '34px' : '28px';
+  return '<div style="text-align:center;width:' + (current ? '44px' : '40px') + ';' + opacity + '">'
+    + '<div style="width:' + size + ';height:' + size + ';border-radius:50%;background:' + bg + ';border:2px solid ' + border + ';display:flex;align-items:center;justify-content:center;font-size:' + (current ? '16px' : '13px') + ';margin:0 auto 3px;">' + emoji + '</div>'
+    + '<p style="font-size:8px;color:' + (active && !faded ? border : 'var(--mid)') + ';' + (current ? 'font-weight:500;' : '') + '">' + label + '</p>'
+    + '</div>';
+}
+function stageLine(color) {
+  return '<div style="flex:1;height:2px;background:' + color + ';margin-bottom:14px;"></div>';
+}
+
+// CARD POPUP
+function openCard(id) {
+  var d = cardData[id];
+  if (!d) return;
+  var html = '<div style="font-size:38px;text-align:center;margin-bottom:10px;">' + d.emoji + '</div>'
+    + '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:' + d.bg + ';color:' + d.color + ';border:1px solid ' + d.color + ';display:inline-block;margin-bottom:10px;">' + d.tag + '</span>'
+    + '<p style="font-size:17px;font-weight:700;color:var(--charcoal);margin-bottom:10px;">' + d.title + '</p>'
+    + '<p style="font-size:13px;color:var(--mid);line-height:1.8;margin-bottom:10px;white-space:pre-line;">' + d.desc + '</p>'
+    + '<p style="font-size:10px;color:var(--mid);">最終更新: ' + d.date + '</p>';
+  document.getElementById('popup-content').innerHTML = html;
+  document.getElementById('popup').classList.add('show');
+}
+function closePopup(e) {
+  if (e.target === document.getElementById('popup')) document.getElementById('popup').classList.remove('show');
+}
+
+// VOTE HYPOTHESIS
+function voteHypothesis(agree) {
+  var el = event.target.parentElement;
+  el.innerHTML = '<p style="font-size:12px;color:' + (agree ? 'var(--green)' : 'var(--mid)') + ';text-align:center;padding:4px;">'
+    + (agree ? '✓ 記録しました！次の観察に活かします' : 'フィードバックありがとうございます。仮説を修正します。') + '</p>';
+}
+
+// OPEN TORISETU
+function openTorisetu() {
+  updateLevelUI();
+  renderTorisetsuAll();
+  renderHeatmap();
+  goTo('screen-torisetu');
+}
+
+// TAB SWITCH
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.ts-body').forEach(function(b) { b.style.display = 'none'; });
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).style.display = 'flex';
+  if (name === 'params') { animateBars(); renderHeatmap(); }
+}
+
+function animateBars() {
+  if (barsAnimated || !torisetu.structured || !torisetu.structured.params) return;
+  barsAnimated = true;
+  var p = torisetu.structured.params;
+  var keys = ['lang','music','pattern','emotion','motor'];
+  keys.forEach(function(k, i) {
+    setTimeout(function() {
+      var el = document.getElementById('pb-' + k);
+      if (el) el.style.width = (p[k] || 0) + '%';
+    }, i * 100);
+  });
+}
+
+// HEATMAP
+function renderHeatmap() {
+  var el = document.getElementById('heatmap');
+  if (!el || el.children.length > 0) return;
+  var count = conversationLog.length;
+  for (var i = 0; i < 35; i++) {
+    var dot = document.createElement('div');
+    var active = i < count;
+    var opacity = active ? (0.3 + Math.random() * 0.7).toFixed(2) : '1';
+    dot.style.cssText = 'height:16px;border-radius:3px;background:' + (active ? 'var(--orange)' : 'var(--border)') + ';opacity:' + opacity + ';';
+    el.appendChild(dot);
+  }
+  var streakEl = document.getElementById('streak-text');
+  if (streakEl && count > 0) streakEl.textContent = count + '日間の記録';
+}
+
+// TIMELINE
+function renderTimeline() {
+  var body = document.getElementById('timeline-body');
+  if (!conversationLog || conversationLog.length === 0) return;
+  var html = '';
+  var reversed = conversationLog.slice().reverse();
+  reversed.forEach(function(c, i) {
+    var d = new Date(c.ts);
+    var dateStr = getDateStr(d) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    var colors = ['var(--orange)','var(--green)','var(--lavender)','var(--amber)'];
+    var color = colors[i % colors.length];
+    var isLast = i === reversed.length - 1;
+    html += '<div class="tl-item">'
+      + '<div class="tl-dot-wrap"><div class="tl-dot" style="background:' + color + ';"></div>' + (isLast ? '' : '<div class="tl-line"></div>') + '</div>'
+      + '<div style="flex:1;padding-bottom:' + (isLast ? '0' : '12px') + ';">'
+      + '<p class="tl-date">' + dateStr + '</p>'
+      + '<p class="tl-text">' + c.q + '</p>'
+      + '<p class="tl-ai">' + c.a.slice(0, 80) + (c.a.length > 80 ? '...' : '') + '</p>'
+      + '</div></div>';
+  });
+  body.innerHTML = html;
+}
+
+// TALK HISTORY
+function renderTalkHistory() {
+  var body = document.getElementById('talk-history-body');
+  if (!conversationLog || conversationLog.length === 0) return;
+  var html = '';
+  var reversed = conversationLog.slice().reverse();
+  reversed.forEach(function(c) {
+    var d = new Date(c.ts);
+    var dateStr = getDateStr(d) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">'
+      + '<p style="font-size:10px;color:var(--mid);margin-bottom:7px;">' + dateStr + '</p>'
+      + '<div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><div class="bub-user">' + c.q + '</div></div>'
+      + '<div class="bub-ai">' + c.a + '</div></div>';
+  });
+  body.innerHTML = html;
+}
+
+// INIT
+window.addEventListener('DOMContentLoaded', function() {
+  var saved = localStorage.getItem('uchinoko_p');
+  if (saved) {
+    profile = JSON.parse(saved);
+    document.getElementById('child-name').value = profile.name;
+    document.getElementById('child-age').value = profile.age;
+    if (profile.recent) document.getElementById('recent').value = profile.recent;
+    document.querySelectorAll('#chips-p .chip').forEach(function(c) { if ((profile.personality||[]).indexOf(c.textContent) > -1) c.classList.add('sel-o'); });
+    document.querySelectorAll('#chips-l .chip').forEach(function(c) { if ((profile.likes||[]).indexOf(c.textContent) > -1) c.classList.add('sel-g'); });
+    document.querySelectorAll('#chips-d .chip').forEach(function(c) { if ((profile.dislikes||[]).indexOf(c.textContent) > -1) c.classList.add('sel-r'); });
+    var btn = document.getElementById('save-btn');
+    if (btn) btn.textContent = '更新する';
+    renderHome();
+    var savedTs = localStorage.getItem('uchinoko_ts');
+    if (savedTs) torisetu.structured = JSON.parse(savedTs);
+    var savedLog = localStorage.getItem('uchinoko_log');
+    if (savedLog) conversationLog = JSON.parse(savedLog);
+    var savedDisc = localStorage.getItem('uchinoko_disc');
+    if (savedDisc) showDiscovery(JSON.parse(savedDisc));
+    updateLevelUI();
+    goTo('screen-home');
+  }
+  document.getElementById('today-date').textContent = getDateStr();
+});
+</script>
+</body>
+</html>
